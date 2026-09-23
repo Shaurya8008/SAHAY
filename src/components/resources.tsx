@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, ChevronDown, Clock, Languages, Moon, PhoneCall, Users, Wind } from "lucide-react";
 import { RESOURCES } from "../lib/sahay-data";
@@ -15,6 +15,7 @@ const ICONS: Record<string, any> = {
 export default function Resources({ onSOS, showToast }: { onSOS: () => void; showToast?: (t: string) => void }) {
   const [open, setOpen] = useState<number | null>(1);
   const [playing, setPlaying] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [saved, setSaved] = useState<Record<number, boolean>>({ 1: true, 3: true });
   const [offline, setOffline] = useState<Record<number, boolean>>({ 4: true });
   const [filter, setFilter] = useState("All");
@@ -33,8 +34,22 @@ export default function Resources({ onSOS, showToast }: { onSOS: () => void; sho
     showToast?.(next ? "Bookmarked! 🔖" : "Bookmark removed");
   };
 
+  const handlePlay = (id: number) => {
+    if (playing === id) {
+      setPlaying(null);
+      audioRef.current?.pause();
+    } else {
+      setPlaying(id);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  };
+
   return (
     <div className="px-4 pt-4 pb-2 space-y-4">
+      <audio ref={audioRef} src="/calm.ogg" loop />
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[24px] mango-ink text-white p-5 card-shadow">
         <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[#ffde59]/25" />
         <div className="absolute right-16 bottom-[-40px] w-24 h-24 rounded-full bg-[#ffde59]/15" />
@@ -73,7 +88,7 @@ export default function Resources({ onSOS, showToast }: { onSOS: () => void; sho
                 <div className="px-4 pb-4">
                   <p className="text-[12.5px] text-[#6B4520] leading-relaxed bg-[#FFFBEE] rounded-2xl p-3 border border-[#ff914d]/10">{r.desc}</p>
                   <div className="grid grid-cols-2 gap-2 mt-2.5">
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setPlaying(playing === r.id ? null : r.id)} className="py-2.5 rounded-xl mango-hero text-[#5C2D00] text-[12px] font-bold">{playing === r.id ? "⏸ Pause preview" : "▶ Start now"}</motion.button>
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => handlePlay(r.id)} className="py-2.5 rounded-xl mango-hero text-[#5C2D00] text-[12px] font-bold">{playing === r.id ? "⏸ Pause preview" : "▶ Start now"}</motion.button>
                     {/* FIX: Offline toggle now shows toast feedback */}
                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleOffline(r.id)} className="py-2.5 rounded-xl border border-[#ff914d]/30 text-[12px] font-bold text-[#9A5500]">{offline[r.id] ? "✓ Saved offline" : "⬇ Offline pack"}</motion.button>
                   </div>
